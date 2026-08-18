@@ -1,712 +1,767 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width,
-    initial-scale=1.0,
-    maximum-scale=1.0,
-    user-scalable=no,
-    viewport-fit=cover"
-  >
-
-  <title>LAWANG MOBILE</title>
-
-  <style>
-
-    * {
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-
-      width: 100%;
-      height: 100%;
-
-      overflow: hidden;
-
-      background: #10151c;
-
-      font-family: Arial, sans-serif;
-
-      touch-action: none;
-    }
-
-    #game {
-
-      position: fixed;
-
-      left: 0;
-      top: 0;
-
-      width: 100vw;
-      height: 100vh;
-
-      display: block;
-
-      background: #18212b;
-    }
-
-    /* =========================
-       HUD
-    ========================= */
-
-    #ui {
-
-      position: fixed;
-
-      top: 15px;
-      left: 15px;
-
-      z-index: 100;
-
-      color: white;
-
-      background: rgba(0,0,0,0.55);
-
-      padding: 10px 14px;
-
-      border-radius: 10px;
-
-      font-size: 14px;
-
-      line-height: 1.6;
-
-      pointer-events: none;
-    }
-
-    /* =========================
-       MOBILE CONTROLS
-    ========================= */
-
-    #mobileControls {
-
-      position: fixed;
-
-      inset: 0;
-
-      z-index: 200;
-
-      pointer-events: none;
-    }
-
-    /* =========================
-       JOYSTICK
-    ========================= */
-
-    #joystick {
-
-      position: absolute;
-
-      left: 25px;
-
-      bottom: 30px;
-
-      width: 145px;
-      height: 145px;
-
-      border-radius: 50%;
-
-      background:
-        rgba(255,255,255,0.10);
-
-      border:
-        2px solid
-        rgba(255,255,255,0.35);
-
-      pointer-events: auto;
-
-      touch-action: none;
-    }
-
-    #joystickKnob {
-
-      position: absolute;
-
-      left: 50%;
-      top: 50%;
-
-      width: 65px;
-      height: 65px;
-
-      margin-left: -32.5px;
-      margin-top: -32.5px;
-
-      border-radius: 50%;
-
-      background:
-        rgba(255,255,255,0.30);
-
-      border:
-        2px solid
-        rgba(255,255,255,0.65);
-
-      pointer-events: none;
-
-      transition:
-        transform 0.03s linear;
-    }
-
-    /* =========================
-       AIM AREA
-    ========================= */
-
-    #aimArea {
-
-      position: absolute;
-
-      right: 0;
-      top: 0;
-
-      width: 55%;
-      height: 75%;
-
-      pointer-events: auto;
-
-      touch-action: none;
-    }
-
-    /* =========================
-       BUTTONS
-    ========================= */
-
-    .gameButton {
-
-      position: absolute;
-
-      display: flex;
-
-      align-items: center;
-      justify-content: center;
-
-      color: white;
-
-      border-radius: 50%;
-
-      border:
-        2px solid
-        rgba(255,255,255,0.55);
-
-      background:
-        rgba(255,255,255,0.14);
-
-      font-weight: bold;
-
-      user-select: none;
-
-      -webkit-user-select: none;
-
-      pointer-events: auto;
-
-      touch-action: none;
-    }
-
-    #fireButton {
-
-      right: 25px;
-      bottom: 45px;
-
-      width: 90px;
-      height: 90px;
-
-      background:
-        rgba(220,50,50,0.40);
-
-      font-size: 17px;
-    }
-
-    #jumpButton {
-
-      right: 135px;
-      bottom: 40px;
-
-      width: 65px;
-      height: 65px;
-
-      font-size: 14px;
-    }
-
-    #reloadButton {
-
-      right: 145px;
-      bottom: 120px;
-
-      width: 58px;
-      height: 58px;
-
-      font-size: 12px;
-    }
-
-    #gunButton {
-
-      right: 35px;
-      bottom: 155px;
-
-      width: 65px;
-      height: 65px;
-
-      font-size: 12px;
-    }
-
-    #runButton {
-
-      left: 180px;
-      bottom: 40px;
-
-      width: 60px;
-      height: 60px;
-
-      font-size: 12px;
-    }
-
-    #crouchButton {
-
-      right: 215px;
-      bottom: 45px;
-
-      width: 58px;
-      height: 58px;
-
-      font-size: 11px;
-    }
-
-    /* =========================
-       SETTINGS
-    ========================= */
-
-    #settingsButton {
-
-      position: fixed;
-
-      right: 15px;
-      top: 15px;
-
-      z-index: 300;
-
-      width: 48px;
-      height: 48px;
-
-      border-radius: 50%;
-
-      border:
-        1px solid
-        rgba(255,255,255,0.4);
-
-      background:
-        rgba(0,0,0,0.5);
-
-      color: white;
-
-      font-size: 22px;
-    }
-
-    /* =========================
-       SETTINGS PANEL
-    ========================= */
-
-    #settingsPanel {
-
-      display: none;
-
-      position: fixed;
-
-      inset: 0;
-
-      z-index: 500;
-
-      background:
-        rgba(0,0,0,0.75);
-
-      color: white;
-
-      align-items: center;
-      justify-content: center;
-    }
-
-    #settingsBox {
-
-      width: 85%;
-
-      max-width: 420px;
-
-      background: #18212b;
-
-      border:
-        1px solid
-        rgba(255,255,255,0.25);
-
-      border-radius: 18px;
-
-      padding: 22px;
-
-      text-align: center;
-    }
-
-    #settingsBox h2 {
-
-      margin-top: 0;
-    }
-
-    .settingRow {
-
-      display: flex;
-
-      justify-content: space-between;
-
-      align-items: center;
-
-      margin: 18px 0;
-    }
-
-    #closeSettings {
-
-      width: 100%;
-
-      padding: 12px;
-
-      border: 0;
-
-      border-radius: 10px;
-
-      background: #2388ff;
-
-      color: white;
-
-      font-size: 16px;
-    }
-
-  </style>
+<meta charset="UTF-8">
+<meta
+  name="viewport"
+  content="width=device-width,
+  initial-scale=1.0,
+  maximum-scale=1.0,
+  user-scalable=no,
+  viewport-fit=cover"
+>
+<title>LAWANG MOBILE</title>
+<style>
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #10151c;
+  font-family: Arial, sans-serif;
+  touch-action: none;
+}
+#game {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  background: #18212b;
+}
+/* =========================
+   HUD
+========================= */
+#ui {
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 100;
+  color: white;
+  background:
+    rgba(0,0,0,0.55);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  pointer-events: none;
+}
+/* =========================
+   CONTROL LAYER
+========================= */
+#mobileControls {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+}
+/* =========================
+   JOYSTICK
+========================= */
+#joystick {
+  position: absolute;
+  left: 25px;
+  bottom: 30px;
+  width: 145px;
+  height: 145px;
+  border-radius: 50%;
+  background:
+    rgba(255,255,255,0.10);
+  border:
+    2px solid
+    rgba(255,255,255,0.35);
+  pointer-events: auto;
+  touch-action: none;
+}
+#joystickKnob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 65px;
+  height: 65px;
+  margin-left: -32.5px;
+  margin-top: -32.5px;
+  border-radius: 50%;
+  background:
+    rgba(255,255,255,0.30);
+  border:
+    2px solid
+    rgba(255,255,255,0.65);
+  pointer-events: none;
+}
+/* =========================
+   BUTTONS
+========================= */
+.gameButton {
+  position: absolute;
+  width: 65px;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border-radius: 50%;
+  border:
+    2px solid
+    rgba(255,255,255,0.45);
+  background:
+    rgba(255,255,255,0.14);
+  font-weight: bold;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+  touch-action: none;
+  z-index: 210;
+}
+/* =========================
+   DEFAULT POSITIONS
+========================= */
+#fireButton {
+  right: 25px;
+  bottom: 45px;
+  width: 90px;
+  height: 90px;
+  background:
+    rgba(220,50,50,0.40);
+}
+#jumpButton {
+  right: 135px;
+  bottom: 40px;
+}
+#reloadButton {
+  right: 145px;
+  bottom: 120px;
+  width: 58px;
+  height: 58px;
+  font-size: 12px;
+}
+#gunButton {
+  right: 35px;
+  bottom: 155px;
+  font-size: 12px;
+}
+#runButton {
+  left: 180px;
+  bottom: 40px;
+  font-size: 12px;
+}
+#crouchButton {
+  right: 215px;
+  bottom: 45px;
+  width: 58px;
+  height: 58px;
+  font-size: 11px;
+}
+/* =========================
+   SETTINGS
+========================= */
+#settingsButton {
+  position: fixed;
+  right: 15px;
+  top: 15px;
+  z-index: 500;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border:
+    1px solid
+    rgba(255,255,255,0.4);
+  background:
+    rgba(0,0,0,0.55);
+  color: white;
+  font-size: 22px;
+}
+/* =========================
+   SETTINGS PANEL
+========================= */
+#settingsPanel {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background:
+    rgba(0,0,0,0.78);
+  color: white;
+  align-items: center;
+  justify-content: center;
+}
+#settingsBox {
+  width: 88%;
+  max-width: 420px;
+  background: #18212b;
+  border:
+    1px solid
+    rgba(255,255,255,0.25);
+  border-radius: 18px;
+  padding: 22px;
+  text-align: center;
+}
+#settingsBox h2 {
+  margin-top: 0;
+}
+.settingButton {
+  width: 100%;
+  padding: 14px;
+  margin-top: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: #2388ff;
+  color: white;
+  font-size: 16px;
+}
+#closeSettings {
+  background: #444;
+}
+/* =========================
+   EDIT MODE
+========================= */
+#editBar {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 2000;
+  padding:
+    10px;
+  background:
+    rgba(0,0,0,0.85);
+  color: white;
+  text-align: center;
+}
+#editBar button {
+  margin: 4px;
+  padding:
+    9px 14px;
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  background: #2388ff;
+}
+#editBar .reset {
+  background: #a83232;
+}
+/* Editing visual */
+body.editMode
+.gameButton {
+  border:
+    2px dashed
+    #ffffff;
+  background:
+    rgba(35,136,255,0.30);
+  box-shadow:
+    0 0 12px
+    rgba(255,255,255,0.35);
+}
+body.editMode
+#joystick {
+  border:
+    2px dashed
+    white;
+  box-shadow:
+    0 0 12px
+    rgba(255,255,255,0.35);
+}
+body.editMode
+#joystickKnob {
+  pointer-events: none;
+}
+/* Hide game interaction while editing */
+body.editMode
+#aimArea {
+  display: none;
+}
+</style>
 </head>
-
 <body>
-
-  <canvas id="game"></canvas>
-
-  <!-- =========================
-       HUD
-  ========================= -->
-
-  <div id="ui">
-
-    <strong>LAWANG MOBILE</strong><br>
-
-    HP:
-    <span id="hp">100</span>
-    <br>
-
-    Weapon:
-    <span id="weapon">PISTOL</span>
-    <br>
-
-    Score:
-    <span id="score">0</span>
-
+<canvas id="game"></canvas>
+<!-- =========================
+     HUD
+========================= -->
+<div id="ui">
+  <strong>LAWANG MOBILE</strong><br>
+  HP:
+  <span id="hp">100</span>
+  <br>
+  Weapon:
+  <span id="weapon">PISTOL</span>
+  <br>
+  Score:
+  <span id="score">0</span>
+</div>
+<!-- =========================
+     SETTINGS
+========================= -->
+<button id="settingsButton">
+  ⚙️
+</button>
+<!-- =========================
+     EDIT BAR
+========================= -->
+<div id="editBar">
+  <div>
+    <strong>CONTROL CUSTOMIZE</strong>
   </div>
-
-  <!-- =========================
-       SETTINGS BUTTON
-  ========================= -->
-
-  <button id="settingsButton">
-    ⚙️
+  <button id="saveControls">
+    SAVE
   </button>
-
-  <!-- =========================
-       MOBILE CONTROLS
-  ========================= -->
-
-  <div id="mobileControls">
-
-    <!-- Movement -->
-
-    <div id="joystick">
-
-      <div id="joystickKnob"></div>
-
-    </div>
-
-    <!-- Aim -->
-
-    <div id="aimArea"></div>
-
-    <!-- Action buttons -->
-
-    <div
-      id="fireButton"
-      class="gameButton"
-    >
-      FIRE
-    </div>
-
-    <div
-      id="jumpButton"
-      class="gameButton"
-    >
-      JUMP
-    </div>
-
-    <div
-      id="reloadButton"
-      class="gameButton"
-    >
-      RELOAD
-    </div>
-
-    <div
-      id="gunButton"
-      class="gameButton"
-    >
-      GUN
-    </div>
-
-    <div
-      id="runButton"
-      class="gameButton"
-    >
-      RUN
-    </div>
-
-    <div
-      id="crouchButton"
-      class="gameButton"
-    >
-      CROUCH
-    </div>
-
+  <button id="resetControls"
+    class="reset">
+    RESET
+  </button>
+  <button id="exitEdit">
+    DONE
+  </button>
+</div>
+<!-- =========================
+     CONTROLS
+========================= -->
+<div id="mobileControls">
+  <div id="joystick">
+    <div id="joystickKnob"></div>
   </div>
-
-  <!-- =========================
-       SETTINGS PANEL
-  ========================= -->
-
-  <div id="settingsPanel">
-
-    <div id="settingsBox">
-
-      <h2>LAWANG MOBILE</h2>
-
-      <div class="settingRow">
-        <span>Controls</span>
-        <span>Mobile</span>
-      </div>
-
-      <div class="settingRow">
-        <span>Graphics</span>
-        <span>High</span>
-      </div>
-
-      <div class="settingRow">
-        <span>FPS</span>
-        <span>60</span>
-      </div>
-
-      <button id="closeSettings">
-        CLOSE
-      </button>
-
-    </div>
-
+  <div
+    id="fireButton"
+    class="gameButton">
+    FIRE
   </div>
-
-  <!-- =========================
-       GAME ENGINE
-  ========================= -->
-
-  <script src="game.js"></script>
-
-  <!-- =========================
-       JOYSTICK SYSTEM
-  ========================= -->
-
-  <script>
-
-    const joystick =
-      document.getElementById(
-        "joystick"
-      );
-
-    const knob =
-      document.getElementById(
-        "joystickKnob"
-      );
-
-    let joystickActive = false;
-
-    const joystickCenter = 72;
-
-    const joystickMax = 45;
-
-    function moveJoystick(
-      clientX,
-      clientY
+  <div
+    id="jumpButton"
+    class="gameButton">
+    JUMP
+  </div>
+  <div
+    id="reloadButton"
+    class="gameButton">
+    RELOAD
+  </div>
+  <div
+    id="gunButton"
+    class="gameButton">
+    GUN
+  </div>
+  <div
+    id="runButton"
+    class="gameButton">
+    RUN
+  </div>
+  <div
+    id="crouchButton"
+    class="gameButton">
+    CROUCH
+  </div>
+</div>
+<!-- =========================
+     SETTINGS PANEL
+========================= -->
+<div id="settingsPanel">
+  <div id="settingsBox">
+    <h2>
+      LAWANG MOBILE
+    </h2>
+    <button
+      id="customizeControls"
+      class="settingButton">
+      🎮 CUSTOMIZE CONTROLS
+    </button>
+    <button
+      id="resetFromSettings"
+      class="settingButton">
+      🔄 RESET CONTROLS
+    </button>
+    <button
+      id="closeSettings"
+      class="settingButton">
+      CLOSE
+    </button>
+  </div>
+</div>
+<!-- =========================
+     GAME
+========================= -->
+<script src="game.js"></script>
+<!-- =========================
+     CONTROL SYSTEM
+========================= -->
+<script>
+const joystick =
+  document.getElementById(
+    "joystick"
+  );
+const knob =
+  document.getElementById(
+    "joystickKnob"
+  );
+let joystickActive = false;
+const joystickCenter = 72;
+const joystickMax = 45;
+window.joystickX = 0;
+window.joystickY = 0;
+/* =========================
+   JOYSTICK
+========================= */
+function moveJoystick(
+  clientX,
+  clientY
+) {
+  const rect =
+    joystick.getBoundingClientRect();
+  let x =
+    clientX -
+    rect.left -
+    joystickCenter;
+  let y =
+    clientY -
+    rect.top -
+    joystickCenter;
+  const distance =
+    Math.sqrt(
+      x * x +
+      y * y
+    );
+  if (
+    distance >
+    joystickMax
+  ) {
+    x =
+      (x / distance) *
+      joystickMax;
+    y =
+      (y / distance) *
+      joystickMax;
+  }
+  knob.style.transform =
+    `translate(${x}px,${y}px)`;
+  window.joystickX =
+    x / joystickMax;
+  window.joystickY =
+    y / joystickMax;
+}
+function resetJoystick() {
+  joystickActive = false;
+  knob.style.transform =
+    "translate(0px,0px)";
+  window.joystickX = 0;
+  window.joystickY = 0;
+}
+joystick.addEventListener(
+  "touchstart",
+  event => {
+    if (
+      document.body.classList
+        .contains("editMode")
     ) {
-
-      const rect =
-        joystick.getBoundingClientRect();
-
-      let x =
-        clientX -
-        rect.left -
-        joystickCenter;
-
-      let y =
-        clientY -
-        rect.top -
-        joystickCenter;
-
-      const distance =
-        Math.sqrt(
-          x * x +
-          y * y
-        );
-
-      if (
-        distance >
-        joystickMax
-      ) {
-
-        x =
-          (x / distance) *
-          joystickMax;
-
-        y =
-          (y / distance) *
-          joystickMax;
-      }
-
-      knob.style.transform =
-        `translate(${x}px, ${y}px)`;
-
-      /*
-       * Movement values are exposed
-       * for game.js.
-       */
-
-      window.joystickX =
-        x / joystickMax;
-
-      window.joystickY =
-        y / joystickMax;
+      return;
     }
-
-    function resetJoystick() {
-
-      joystickActive = false;
-
-      knob.style.transform =
-        "translate(0px, 0px)";
-
-      window.joystickX = 0;
-
-      window.joystickY = 0;
+    event.preventDefault();
+    joystickActive = true;
+    const touch =
+      event.touches[0];
+    moveJoystick(
+      touch.clientX,
+      touch.clientY
+    );
+  },
+  {
+    passive: false
+  }
+);
+joystick.addEventListener(
+  "touchmove",
+  event => {
+    if (
+      !joystickActive ||
+      document.body.classList
+        .contains("editMode")
+    ) {
+      return;
     }
-
-    joystick.addEventListener(
+    event.preventDefault();
+    const touch =
+      event.touches[0];
+    moveJoystick(
+      touch.clientX,
+      touch.clientY
+    );
+  },
+  {
+    passive: false
+  }
+);
+joystick.addEventListener(
+  "touchend",
+  event => {
+    event.preventDefault();
+    resetJoystick();
+  },
+  {
+    passive: false
+  }
+);
+/* =========================
+   SETTINGS
+========================= */
+const settingsButton =
+  document.getElementById(
+    "settingsButton"
+  );
+const settingsPanel =
+  document.getElementById(
+    "settingsPanel"
+  );
+const closeSettings =
+  document.getElementById(
+    "closeSettings"
+  );
+const customizeControls =
+  document.getElementById(
+    "customizeControls"
+  );
+const resetFromSettings =
+  document.getElementById(
+    "resetFromSettings"
+  );
+const editBar =
+  document.getElementById(
+    "editBar"
+  );
+const saveControls =
+  document.getElementById(
+    "saveControls"
+  );
+const resetControls =
+  document.getElementById(
+    "resetControls"
+  );
+const exitEdit =
+  document.getElementById(
+    "exitEdit"
+  );
+settingsButton.onclick = () => {
+  settingsPanel.style.display =
+    "flex";
+};
+closeSettings.onclick = () => {
+  settingsPanel.style.display =
+    "none";
+};
+/* =========================
+   CUSTOMIZE MODE
+========================= */
+function startCustomize() {
+  settingsPanel.style.display =
+    "none";
+  document.body.classList
+    .add("editMode");
+  editBar.style.display =
+    "block";
+}
+customizeControls.onclick =
+  startCustomize;
+/* =========================
+   DRAGGABLE CONTROLS
+========================= */
+const controlIds = [
+  "joystick",
+  "fireButton",
+  "jumpButton",
+  "reloadButton",
+  "gunButton",
+  "runButton",
+  "crouchButton"
+];
+controlIds.forEach(
+  id => {
+    const element =
+      document.getElementById(id);
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+    element.addEventListener(
       "touchstart",
       event => {
-
-        event.preventDefault();
-
-        joystickActive = true;
-
-        const touch =
-          event.touches[0];
-
-        moveJoystick(
-          touch.clientX,
-          touch.clientY
-        );
-
-      },
-      {
-        passive: false
-      }
-    );
-
-    joystick.addEventListener(
-      "touchmove",
-      event => {
-
-        if (!joystickActive) {
+        if (
+          !document.body.classList
+            .contains("editMode")
+        ) {
           return;
         }
-
         event.preventDefault();
-
+        dragging = true;
         const touch =
           event.touches[0];
-
-        moveJoystick(
-          touch.clientX,
-          touch.clientY
-        );
-
+        const rect =
+          element.getBoundingClientRect();
+        offsetX =
+          touch.clientX -
+          rect.left;
+        offsetY =
+          touch.clientY -
+          rect.top;
       },
       {
         passive: false
       }
     );
-
-    joystick.addEventListener(
-      "touchend",
+    element.addEventListener(
+      "touchmove",
       event => {
-
+        if (!dragging) {
+          return;
+        }
         event.preventDefault();
-
-        resetJoystick();
-
+        const touch =
+          event.touches[0];
+        let x =
+          touch.clientX -
+          offsetX;
+        let y =
+          touch.clientY -
+          offsetY;
+        const maxX =
+          window.innerWidth -
+          element.offsetWidth;
+        const maxY =
+          window.innerHeight -
+          element.offsetHeight;
+        x =
+          Math.max(
+            0,
+            Math.min(maxX, x)
+          );
+        y =
+          Math.max(
+            0,
+            Math.min(maxY, y)
+          );
+        element.style.left =
+          x + "px";
+        element.style.top =
+          y + "px";
+        element.style.right =
+          "auto";
+        element.style.bottom =
+          "auto";
       },
       {
         passive: false
       }
     );
-
-    // Default values
-
-    window.joystickX = 0;
-
-    window.joystickY = 0;
-
-    // =========================
-    // SETTINGS
-    // =========================
-
-    const settingsButton =
-      document.getElementById(
-        "settingsButton"
-      );
-
-    const settingsPanel =
-      document.getElementById(
-        "settingsPanel"
-      );
-
-    const closeSettings =
-      document.getElementById(
-        "closeSettings"
-      );
-
-    settingsButton.onclick = () => {
-
-      settingsPanel.style.display =
-        "flex";
-
-    };
-
-    closeSettings.onclick = () => {
-
-      settingsPanel.style.display =
-        "none";
-
-    };
-
-  </script>
-
+    element.addEventListener(
+      "touchend",
+      () => {
+        dragging = false;
+      }
+    );
+  }
+);
+/* =========================
+   SAVE POSITIONS
+========================= */
+function saveControlPositions() {
+  const positions = {};
+  controlIds.forEach(
+    id => {
+      const element =
+        document.getElementById(id);
+      positions[id] = {
+        left:
+          element.style.left,
+        top:
+          element.style.top,
+        right:
+          element.style.right,
+        bottom:
+          element.style.bottom
+      };
+    }
+  );
+  localStorage.setItem(
+    "lawangControls",
+    JSON.stringify(
+      positions
+    )
+  );
+}
+saveControls.onclick = () => {
+  saveControlPositions();
+  alert(
+    "Controls saved!"
+  );
+};
+/* =========================
+   LOAD POSITIONS
+========================= */
+function loadControlPositions() {
+  const saved =
+    localStorage.getItem(
+      "lawangControls"
+    );
+  if (!saved) {
+    return;
+  }
+  try {
+    const positions =
+      JSON.parse(saved);
+    controlIds.forEach(
+      id => {
+        const element =
+          document.getElementById(id);
+        const position =
+          positions[id];
+        if (!position) {
+          return;
+        }
+        element.style.left =
+          position.left;
+        element.style.top =
+          position.top;
+        element.style.right =
+          position.right;
+        element.style.bottom =
+          position.bottom;
+      }
+    );
+  } catch (error) {
+    console.log(
+      "Control settings error"
+    );
+  }
+}
+/* =========================
+   RESET
+========================= */
+function resetControlPositions() {
+  localStorage.removeItem(
+    "lawangControls"
+  );
+  location.reload();
+}
+resetControls.onclick =
+  resetControlPositions;
+resetFromSettings.onclick =
+  resetControlPositions;
+/* =========================
+   EXIT EDIT MODE
+========================= */
+exitEdit.onclick = () => {
+  saveControlPositions();
+  document.body.classList
+    .remove("editMode");
+  editBar.style.display =
+    "none";
+};
+/* =========================
+   LOAD SAVED SETTINGS
+========================= */
+loadControlPositions();
+</script>
 </body>
 </html>
