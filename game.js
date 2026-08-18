@@ -1,69 +1,48 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
-// =====================================================
-// CANVAS
-// =====================================================
-
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-
   player.x = Math.max(
     25,
     Math.min(canvas.width - 25, player.x)
   );
-
   player.y = Math.max(
     35,
     Math.min(canvas.height - 35, player.y)
   );
 }
-
 window.addEventListener("resize", resizeCanvas);
-
-// =====================================================
-// PLAYER
-// =====================================================
-
+/* =========================
+   PLAYER
+========================= */
 const player = {
   x: window.innerWidth / 2,
   y: window.innerHeight / 2,
-
   width: 36,
   height: 50,
-
   speed: 4,
-
   hp: 100,
-
   direction: 0,
-
   moving: false,
-
+  running: false,
+  crouching: false,
+  jumping: false,
+  jumpTimer: 0,
   animation: 0
 };
-
-// =====================================================
-// GAME
-// =====================================================
-
+/* =========================
+   GAME
+========================= */
 let score = 0;
-
 let weapon = "Pistol";
-
 let firing = false;
-
-let muzzleFlash = 0;
-
-let weaponAnimation = 0;
-
-let screenFlash = 0;
-
-// =====================================================
-// ENEMIES
-// =====================================================
-
+let reloading = false;
+let ammo = 12;
+const maxAmmo = 12;
+/* =========================
+   ENEMIES
+========================= */
 const enemies = [
   {
     x: 180,
@@ -71,14 +50,12 @@ const enemies = [
     hp: 100,
     hitEffect: 0
   },
-
   {
     x: 500,
     y: 250,
     hp: 100,
     hitEffect: 0
   },
-
   {
     x: 700,
     y: 450,
@@ -86,153 +63,66 @@ const enemies = [
     hitEffect: 0
   }
 ];
-
-// =====================================================
-// SOUND SYSTEM
-// =====================================================
-
+/* =========================
+   EFFECTS
+========================= */
+let muzzleFlash = 0;
+let weaponAnimation = 0;
+let screenFlash = 0;
+/* =========================
+   AUDIO
+========================= */
 const sounds = {
-  fire: new Audio("assets/fire.mp3"),
-
-  hit: new Audio("assets/hit.mp3"),
-
-  switch: new Audio("assets/switch.mp3"),
-
-  walk: new Audio("assets/walk.mp3"),
-
-  music: new Audio("assets/music.mp3")
+  fire:
+    new Audio("assets/fire.mp3"),
+  hit:
+    new Audio("assets/hit.mp3"),
+  switch:
+    new Audio("assets/switch.mp3"),
+  reload:
+    new Audio("assets/reload.mp3"),
+  jump:
+    new Audio("assets/jump.mp3"),
+  music:
+    new Audio("assets/music.mp3")
 };
-
-sounds.fire.preload = "auto";
-sounds.hit.preload = "auto";
-sounds.switch.preload = "auto";
-sounds.walk.preload = "auto";
-sounds.music.preload = "auto";
-
-sounds.fire.volume = 0.5;
-sounds.hit.volume = 0.5;
-sounds.switch.volume = 0.4;
-sounds.walk.volume = 0.25;
-sounds.music.volume = 0.15;
-
+Object.values(sounds).forEach(
+  sound => {
+    sound.volume = 0.4;
+  }
+);
 sounds.music.loop = true;
-
-sounds.walk.loop = true;
-
+sounds.music.volume = 0.15;
 let audioStarted = false;
-
-// =====================================================
-// AUDIO UNLOCK
-// =====================================================
-
 function startAudio() {
-
   if (audioStarted) {
     return;
   }
-
   audioStarted = true;
-
-  // iPhone / Safari audio unlock
-  sounds.fire.muted = true;
-
-  const promise = sounds.fire.play();
-
-  if (promise) {
-
-    promise
-      .then(() => {
-
-        sounds.fire.pause();
-
-        sounds.fire.currentTime = 0;
-
-        sounds.fire.muted = false;
-
-      })
-      .catch(() => {
-
-        sounds.fire.muted = false;
-
-      });
-
-  }
+  sounds.music.play().catch(() => {});
 }
-
-// =====================================================
-// PLAY SOUND
-// =====================================================
-
 function playSound(name) {
-
   const sound = sounds[name];
-
   if (!sound) {
     return;
   }
-
   try {
-
     sound.currentTime = 0;
-
-    const promise = sound.play();
-
-    if (promise) {
-
-      promise.catch(() => {
-        console.log(
-          "Sound unavailable:",
-          name
-        );
-      });
-
-    }
-
+    sound.play().catch(() => {});
   } catch (error) {
-
     console.log(
       "Audio error:",
-      name
+      error
     );
-
   }
 }
-
-// =====================================================
-// STOP SOUND
-// =====================================================
-
-function stopSound(name) {
-
-  const sound = sounds[name];
-
-  if (!sound) {
-    return;
-  }
-
-  try {
-
-    sound.pause();
-
-    sound.currentTime = 0;
-
-  } catch (error) {}
-
-}
-
-// =====================================================
-// FIRST USER INTERACTION
-// =====================================================
-
 document.addEventListener(
   "touchstart",
   startAudio,
   {
-    once: true,
-    passive: true
+    once: true
   }
 );
-
 document.addEventListener(
   "click",
   startAudio,
@@ -240,300 +130,422 @@ document.addEventListener(
     once: true
   }
 );
-
-// =====================================================
-// EFFECTS
-// =====================================================
-
-function createShootEffect() {
-
-  muzzleFlash = 8;
-
-  weaponAnimation = 8;
-}
-
-function updateEffects() {
-
-  if (muzzleFlash > 0) {
-    muzzleFlash--;
-  }
-
-  if (weaponAnimation > 0) {
-    weaponAnimation--;
-  }
-
-  if (screenFlash > 0) {
-    screenFlash--;
-  }
-
-  for (const enemy of enemies) {
-
-    if (enemy.hitEffect > 0) {
-
-      enemy.hitEffect--;
-
-    }
-
-  }
-}
-
-// =====================================================
-// KEYBOARD
-// =====================================================
-
+/* =========================
+   KEYBOARD
+========================= */
 const keys = {};
-
 window.addEventListener(
   "keydown",
   event => {
-
-    keys[event.key.toLowerCase()] = true;
-
+    keys[
+      event.key.toLowerCase()
+    ] = true;
     if (event.key === " ") {
-
       event.preventDefault();
-
-      fire();
-
+      jump();
     }
-
+    if (
+      event.key.toLowerCase() === "f"
+    ) {
+      fire();
+    }
+    if (
+      event.key.toLowerCase() === "r"
+    ) {
+      reload();
+    }
     if (
       event.key.toLowerCase() === "q"
     ) {
-
       switchWeapon();
-
     }
-
   }
 );
-
 window.addEventListener(
   "keyup",
   event => {
-
-    keys[event.key.toLowerCase()] = false;
-
+    keys[
+      event.key.toLowerCase()
+    ] = false;
   }
 );
-
-// =====================================================
-// PLAYER MOVEMENT
-// =====================================================
-
+/* =========================
+   JOYSTICK
+========================= */
+function getJoystickX() {
+  return Number(
+    window.joystickX || 0
+  );
+}
+function getJoystickY() {
+  return Number(
+    window.joystickY || 0
+  );
+}
+/* =========================
+   PLAYER MOVEMENT
+========================= */
 function updatePlayer() {
-
   player.moving = false;
-
-  if (
-    keys["w"] ||
-    keys["arrowup"]
-  ) {
-
-    player.y -= player.speed;
-
-    player.direction =
-      -Math.PI / 2;
-
-    player.moving = true;
-
-  }
-
-  if (
-    keys["s"] ||
-    keys["arrowdown"]
-  ) {
-
-    player.y += player.speed;
-
-    player.direction =
-      Math.PI / 2;
-
-    player.moving = true;
-
-  }
-
+  let moveX = 0;
+  let moveY = 0;
+  /* Keyboard */
   if (
     keys["a"] ||
     keys["arrowleft"]
   ) {
-
-    player.x -= player.speed;
-
-    player.direction =
-      Math.PI;
-
-    player.moving = true;
-
+    moveX -= 1;
   }
-
   if (
     keys["d"] ||
     keys["arrowright"]
   ) {
-
-    player.x += player.speed;
-
-    player.direction = 0;
-
-    player.moving = true;
-
+    moveX += 1;
   }
-
-  if (player.moving) {
-
-    player.animation += 0.2;
-
-  }
-
-  // Walking sound
   if (
-    player.moving &&
-    audioStarted
+    keys["w"] ||
+    keys["arrowup"]
   ) {
-
-    if (
-      sounds.walk &&
-      sounds.walk.readyState >= 2
-    ) {
-
-      if (sounds.walk.paused) {
-
-        sounds.walk
-          .play()
-          .catch(() => {});
-
-      }
-
-    }
-
-  } else {
-
-    stopSound("walk");
-
+    moveY -= 1;
   }
-
-  // Keep player inside screen
-
-  player.x = Math.max(
-    25,
-    Math.min(
-      canvas.width - 25,
-      player.x
-    )
-  );
-
-  player.y = Math.max(
-    35,
-    Math.min(
-      canvas.height - 35,
-      player.y
-    )
+  if (
+    keys["s"] ||
+    keys["arrowdown"]
+  ) {
+    moveY += 1;
+  }
+  /* Joystick */
+  const joyX =
+    getJoystickX();
+  const joyY =
+    getJoystickY();
+  if (
+    Math.abs(joyX) > 0.05 ||
+    Math.abs(joyY) > 0.05
+  ) {
+    moveX = joyX;
+    moveY = joyY;
+  }
+  /* Direction */
+  if (
+    Math.abs(moveX) > 0.05 ||
+    Math.abs(moveY) > 0.05
+  ) {
+    player.direction =
+      Math.atan2(
+        moveY,
+        moveX
+      );
+    player.moving = true;
+  }
+  /* Run */
+  player.running =
+    window.runPressed === true;
+  let speed =
+    player.speed;
+  if (player.running) {
+    speed *= 1.7;
+  }
+  if (player.crouching) {
+    speed *= 0.55;
+  }
+  /* Movement */
+  player.x +=
+    moveX * speed;
+  player.y +=
+    moveY * speed;
+  /* Animation */
+  if (player.moving) {
+    player.animation += 0.2;
+  }
+  /* Jump */
+  if (player.jumping) {
+    player.jumpTimer--;
+    if (
+      player.jumpTimer <= 0
+    ) {
+      player.jumping = false;
+    }
+  }
+  /* Boundaries */
+  player.x =
+    Math.max(
+      25,
+      Math.min(
+        canvas.width - 25,
+        player.x
+      )
+    );
+  player.y =
+    Math.max(
+      35,
+      Math.min(
+        canvas.height - 35,
+        player.y
+      )
+    );
+}
+/* =========================
+   JUMP
+========================= */
+function jump() {
+  if (player.jumping) {
+    return;
+  }
+  startAudio();
+  player.jumping = true;
+  player.jumpTimer = 25;
+  playSound("jump");
+}
+/* =========================
+   RUN
+========================= */
+function setRun(state) {
+  window.runPressed =
+    state;
+}
+/* =========================
+   CROUCH
+========================= */
+function toggleCrouch() {
+  player.crouching =
+    !player.crouching;
+}
+/* =========================
+   WEAPON
+========================= */
+function switchWeapon() {
+  startAudio();
+  if (
+    weapon === "Pistol"
+  ) {
+    weapon = "Rifle";
+  }
+  else if (
+    weapon === "Rifle"
+  ) {
+    weapon = "Shotgun";
+  }
+  else {
+    weapon = "Pistol";
+  }
+  weaponAnimation = 12;
+  playSound("switch");
+  updateHUD();
+}
+/* =========================
+   RELOAD
+========================= */
+function reload() {
+  if (reloading) {
+    return;
+  }
+  if (ammo >= maxAmmo) {
+    return;
+  }
+  startAudio();
+  reloading = true;
+  playSound("reload");
+  setTimeout(
+    () => {
+      ammo = maxAmmo;
+      reloading = false;
+      updateHUD();
+    },
+    1200
   );
 }
-
-// =====================================================
-// BACKGROUND
-// =====================================================
-
+/* =========================
+   FIRE
+========================= */
+function fire() {
+  if (firing) {
+    return;
+  }
+  if (reloading) {
+    return;
+  }
+  if (ammo <= 0) {
+    reload();
+    return;
+  }
+  firing = true;
+  startAudio();
+  playSound("fire");
+  ammo--;
+  muzzleFlash = 8;
+  weaponAnimation = 8;
+  let closest = null;
+  let closestDistance =
+    Infinity;
+  for (
+    const enemy of enemies
+  ) {
+    if (
+      enemy.hp <= 0
+    ) {
+      continue;
+    }
+    const dx =
+      enemy.x -
+      player.x;
+    const dy =
+      enemy.y -
+      player.y;
+    const distance =
+      Math.sqrt(
+        dx * dx +
+        dy * dy
+      );
+    if (
+      distance <
+      closestDistance
+    ) {
+      closestDistance =
+        distance;
+      closest =
+        enemy;
+    }
+  }
+  if (
+    closest &&
+    closestDistance < 500
+  ) {
+    closest.hp -= 25;
+    closest.hitEffect = 8;
+    screenFlash = 5;
+    playSound("hit");
+    if (
+      closest.hp <= 0
+    ) {
+      closest.hp = 0;
+      score += 100;
+    }
+  }
+  updateHUD();
+  setTimeout(
+    () => {
+      firing = false;
+    },
+    120
+  );
+}
+/* =========================
+   EFFECTS
+========================= */
+function updateEffects() {
+  if (
+    muzzleFlash > 0
+  ) {
+    muzzleFlash--;
+  }
+  if (
+    weaponAnimation > 0
+  ) {
+    weaponAnimation--;
+  }
+  if (
+    screenFlash > 0
+  ) {
+    screenFlash--;
+  }
+  for (
+    const enemy of enemies
+  ) {
+    if (
+      enemy.hitEffect > 0
+    ) {
+      enemy.hitEffect--;
+    }
+  }
+}
+/* =========================
+   MAP
+========================= */
 function drawMap() {
-
-  ctx.fillStyle = "#101820";
-
+  ctx.fillStyle =
+    "#101820";
   ctx.fillRect(
     0,
     0,
     canvas.width,
     canvas.height
   );
-
-  ctx.strokeStyle = "#1d3038";
-
+  ctx.strokeStyle =
+    "#1d3038";
   ctx.lineWidth = 1;
-
   for (
     let x = 0;
     x < canvas.width;
     x += 50
   ) {
-
     ctx.beginPath();
-
-    ctx.moveTo(x, 0);
-
+    ctx.moveTo(
+      x,
+      0
+    );
     ctx.lineTo(
       x,
       canvas.height
     );
-
     ctx.stroke();
-
   }
-
   for (
     let y = 0;
     y < canvas.height;
     y += 50
   ) {
-
     ctx.beginPath();
-
-    ctx.moveTo(0, y);
-
+    ctx.moveTo(
+      0,
+      y
+    );
     ctx.lineTo(
       canvas.width,
       y
     );
-
     ctx.stroke();
-
   }
 }
-
-// =====================================================
-// PLAYER GRAPHIC
-// =====================================================
-
+/* =========================
+   PLAYER
+========================= */
 function drawPlayer() {
-
   ctx.save();
-
   ctx.translate(
     player.x,
     player.y
   );
-
   let bob = 0;
-
-  if (player.moving) {
-
+  if (
+    player.moving
+  ) {
     bob =
       Math.sin(
         player.animation
       ) * 3;
-
   }
-
-  // Body
-
-  ctx.fillStyle = "#2388ff";
-
+  if (
+    player.jumping
+  ) {
+    bob -= 18;
+  }
+  /* Body */
+  ctx.fillStyle =
+    player.crouching
+      ? "#1764bb"
+      : "#2388ff";
   ctx.fillRect(
     -player.width / 2,
-
-    -player.height / 2 + bob,
-
+    -player.height / 2 +
+      bob,
     player.width,
-
     player.height
   );
-
-  // Head
-
-  ctx.fillStyle = "#f0b48a";
-
+  /* Head */
+  ctx.fillStyle =
+    "#f0b48a";
   ctx.beginPath();
-
   ctx.arc(
     0,
     -32 + bob,
@@ -541,140 +553,99 @@ function drawPlayer() {
     0,
     Math.PI * 2
   );
-
   ctx.fill();
-
-  // Weapon animation
-
+  /* Weapon */
   let weaponOffset = 0;
-
-  if (weaponAnimation > 0) {
-
+  if (
+    weaponAnimation > 0
+  ) {
     weaponOffset = 5;
-
   }
-
-  // Weapon
-
-  ctx.strokeStyle = "#dddddd";
-
+  ctx.strokeStyle =
+    "#dddddd";
   ctx.lineWidth = 7;
-
   ctx.beginPath();
-
   ctx.moveTo(
     0,
     -5
   );
-
   ctx.lineTo(
     Math.cos(
       player.direction
     ) *
       (35 + weaponOffset),
-
     Math.sin(
       player.direction
     ) *
-      (35 + weaponOffset) -
-      5
+      (35 + weaponOffset)
+      - 5
   );
-
   ctx.stroke();
-
   ctx.restore();
 }
-
-// =====================================================
-// MUZZLE FLASH
-// =====================================================
-
+/* =========================
+   MUZZLE FLASH
+========================= */
 function drawShootEffect() {
-
-  if (muzzleFlash <= 0) {
+  if (
+    muzzleFlash <= 0
+  ) {
     return;
   }
-
   ctx.save();
-
   ctx.translate(
     player.x,
     player.y
   );
-
   const length = 50;
-
-  ctx.fillStyle = "#ffd34d";
-
+  ctx.fillStyle =
+    "#ffd34d";
   ctx.beginPath();
-
   ctx.moveTo(
     Math.cos(
       player.direction
     ) * length,
-
     Math.sin(
       player.direction
-    ) *
-      length -
-      5
+    ) * length - 5
   );
-
   ctx.lineTo(
     Math.cos(
       player.direction + 0.35
     ) * 20,
-
     Math.sin(
       player.direction + 0.35
-    ) *
-      20 -
-      5
+    ) * 20 - 5
   );
-
   ctx.lineTo(
     Math.cos(
       player.direction - 0.35
     ) * 20,
-
     Math.sin(
       player.direction - 0.35
-    ) *
-      20 -
-      5
+    ) * 20 - 5
   );
-
   ctx.closePath();
-
   ctx.fill();
-
   ctx.restore();
 }
-
-// =====================================================
-// ENEMIES
-// =====================================================
-
+/* =========================
+   ENEMIES
+========================= */
 function drawEnemies() {
-
-  for (const enemy of enemies) {
-
-    if (enemy.hp <= 0) {
+  for (
+    const enemy of enemies
+  ) {
+    if (
+      enemy.hp <= 0
+    ) {
       continue;
     }
-
-    if (enemy.hitEffect > 0) {
-
-      ctx.fillStyle = "#ffffff";
-
-    } else {
-
-      ctx.fillStyle = "#e83b3b";
-
-    }
-
+    ctx.fillStyle =
+      enemy.hitEffect > 0
+        ? "#ffffff"
+        : "#e83b3b";
     ctx.beginPath();
-
     ctx.arc(
       enemy.x,
       enemy.y,
@@ -682,265 +653,105 @@ function drawEnemies() {
       0,
       Math.PI * 2
     );
-
     ctx.fill();
-
-    // HP background
-
-    ctx.fillStyle = "#222";
-
+    /* HP */
+    ctx.fillStyle =
+      "#222";
     ctx.fillRect(
       enemy.x - 30,
       enemy.y - 38,
       60,
       7
     );
-
-    // HP
-
-    ctx.fillStyle = "#36df62";
-
+    ctx.fillStyle =
+      "#36df62";
     ctx.fillRect(
       enemy.x - 30,
       enemy.y - 38,
-
       60 *
         (enemy.hp / 100),
-
       7
     );
   }
 }
-
-// =====================================================
-// SHOOTING
-// =====================================================
-
-function fire() {
-
-  if (firing) {
-    return;
-  }
-
-  firing = true;
-
-  // Unlock audio first
-
-  startAudio();
-
-  // Fire sound
-
-  playSound("fire");
-
-  // Visual effect
-
-  createShootEffect();
-
-  let closest = null;
-
-  let closestDistance =
-    Infinity;
-
-  for (const enemy of enemies) {
-
-    if (enemy.hp <= 0) {
-      continue;
-    }
-
-    const dx =
-      enemy.x -
-      player.x;
-
-    const dy =
-      enemy.y -
-      player.y;
-
-    const distance =
-      Math.sqrt(
-        dx * dx +
-        dy * dy
-      );
-
-    if (
-      distance <
-      closestDistance
-    ) {
-
-      closestDistance =
-        distance;
-
-      closest = enemy;
-
-    }
-  }
-
-  if (
-    closest &&
-    closestDistance < 500
-  ) {
-
-    closest.hp -= 25;
-
-    closest.hitEffect = 8;
-
-    screenFlash = 5;
-
-    playSound("hit");
-
-    if (closest.hp <= 0) {
-
-      closest.hp = 0;
-
-      score += 100;
-
-    }
-  }
-
-  updateUI();
-
-  setTimeout(
-    () => {
-
-      firing = false;
-
-    },
-    100
-  );
-}
-
-// =====================================================
-// WEAPON SWITCH
-// =====================================================
-
-function switchWeapon() {
-
-  startAudio();
-
-  if (weapon === "Pistol") {
-
-    weapon = "Rifle";
-
-  } else if (
-    weapon === "Rifle"
-  ) {
-
-    weapon = "Shotgun";
-
-  } else {
-
-    weapon = "Pistol";
-
-  }
-
-  weaponAnimation = 12;
-
-  playSound("switch");
-
-  updateUI();
-}
-
-// =====================================================
-// UI UPDATE
-// =====================================================
-
-function updateUI() {
-
-  const hpElement =
-    document.getElementById("hp");
-
+/* =========================
+   HUD
+========================= */
+function updateHUD() {
+  const hp =
+    document.getElementById(
+      "hp"
+    );
   const weaponElement =
-    document.getElementById("weapon");
-
+    document.getElementById(
+      "weapon"
+    );
   const scoreElement =
-    document.getElementById("score");
-
-  if (hpElement) {
-
-    hpElement.textContent =
+    document.getElementById(
+      "score"
+    );
+  if (hp) {
+    hp.textContent =
       player.hp;
-
   }
-
   if (weaponElement) {
-
     weaponElement.textContent =
       weapon.toUpperCase();
-
   }
-
   if (scoreElement) {
-
     scoreElement.textContent =
       score;
-
   }
 }
-
-// =====================================================
-// HUD / CROSSHAIR
-// =====================================================
-
 function drawHUD() {
-
+  /* Crosshair */
   const cx =
     canvas.width / 2;
-
   const cy =
     canvas.height / 2;
-
-  ctx.strokeStyle = "#ffffff";
-
+  ctx.strokeStyle =
+    "#ffffff";
   ctx.lineWidth = 2;
-
   ctx.beginPath();
-
   ctx.moveTo(
     cx - 12,
     cy
   );
-
   ctx.lineTo(
     cx - 4,
     cy
   );
-
   ctx.moveTo(
     cx + 4,
     cy
   );
-
   ctx.lineTo(
     cx + 12,
     cy
   );
-
   ctx.moveTo(
     cx,
     cy - 12
   );
-
   ctx.lineTo(
     cx,
     cy - 4
   );
-
   ctx.moveTo(
     cx,
     cy + 4
   );
-
   ctx.lineTo(
     cx,
     cy + 12
   );
-
   ctx.stroke();
-
-  if (screenFlash > 0) {
-
+  /* Screen flash */
+  if (
+    screenFlash > 0
+  ) {
     ctx.fillStyle =
       "rgba(255,255,255,0.08)";
-
     ctx.fillRect(
       0,
       0,
@@ -949,268 +760,199 @@ function drawHUD() {
     );
   }
 }
-
-// =====================================================
-// MOBILE CONTROL SYSTEM
-// =====================================================
-
-// Prevent duplicate controls
-
-const oldControls =
-  document.querySelectorAll(
-    ".lawang-control"
+/* =========================
+   BUTTON HELPERS
+========================= */
+function getButton(id) {
+  return document.getElementById(
+    id
   );
-
-oldControls.forEach(
-  button => button.remove()
-);
-
-// -----------------------------------------------------
-// Create button
-// -----------------------------------------------------
-
-function createButton(
-  text,
-  right,
-  bottom,
-  action,
-  extraClass = ""
+}
+function bindTouch(
+  element,
+  start,
+  end
 ) {
-
-  const button =
-    document.createElement(
-      "button"
-    );
-
-  button.className =
-    "lawang-control " +
-    extraClass;
-
-  button.textContent =
-    text;
-
-  button.style.position =
-    "fixed";
-
-  button.style.right =
-    right;
-
-  button.style.bottom =
-    bottom;
-
-  button.style.width =
-    "70px";
-
-  button.style.height =
-    "70px";
-
-  button.style.borderRadius =
-    "50%";
-
-  button.style.border =
-    "2px solid white";
-
-  button.style.background =
-    "rgba(255,255,255,0.15)";
-
-  button.style.color =
-    "white";
-
-  button.style.fontSize =
-    "15px";
-
-  button.style.zIndex =
-    "9999";
-
-  button.style.touchAction =
-    "none";
-
-  button.style.userSelect =
-    "none";
-
-  let touched = false;
-
-  // iPhone touch
-
-  button.addEventListener(
+  if (!element) {
+    return;
+  }
+  element.addEventListener(
     "touchstart",
     event => {
-
       event.preventDefault();
-
-      touched = true;
-
       startAudio();
-
-      action();
-
+      if (start) {
+        start();
+      }
     },
     {
       passive: false
     }
   );
-
-  // Normal browser click
-
-  button.addEventListener(
-    "click",
+  element.addEventListener(
+    "touchend",
     event => {
-
       event.preventDefault();
-
-      if (touched) {
-
-        touched = false;
-
-        return;
-
+      if (end) {
+        end();
       }
-
-      startAudio();
-
-      action();
-
+    },
+    {
+      passive: false
     }
   );
-
-  document.body.appendChild(
-    button
+  /* iPhone fallback */
+  element.addEventListener(
+    "mousedown",
+    event => {
+      event.preventDefault();
+      startAudio();
+      if (start) {
+        start();
+      }
+    }
   );
-
-  return button;
+  element.addEventListener(
+    "mouseup",
+    event => {
+      event.preventDefault();
+      if (end) {
+        end();
+      }
+    }
+  );
 }
-
-// =====================================================
-// FIRE
-// =====================================================
-
-createButton(
-  "FIRE",
-  "25px",
-  "80px",
-  fire,
-  "fire-button"
-);
-
-// =====================================================
-// GUN
-// =====================================================
-
-createButton(
-  "GUN",
-  "25px",
-  "165px",
-  switchWeapon,
-  "gun-button"
-);
-
-// =====================================================
-// UP
-// =====================================================
-
-createButton(
-  "▲",
-  "120px",
-  "150px",
+/* =========================
+   FIRE BUTTON
+========================= */
+bindTouch(
+  getButton(
+    "fireButton"
+  ),
   () => {
-
-    player.y -= 25;
-
-    player.direction =
-      -Math.PI / 2;
-
-  },
-  "move-button"
+    fire();
+  }
 );
-
-// =====================================================
-// DOWN
-// =====================================================
-
-createButton(
-  "▼",
-  "120px",
-  "55px",
+/* =========================
+   JUMP BUTTON
+========================= */
+bindTouch(
+  getButton(
+    "jumpButton"
+  ),
   () => {
-
-    player.y += 25;
-
-    player.direction =
-      Math.PI / 2;
-
-  },
-  "move-button"
+    jump();
+  }
 );
-
-// =====================================================
-// LEFT
-// =====================================================
-
-createButton(
-  "◀",
-  "205px",
-  "55px",
+/* =========================
+   RELOAD BUTTON
+========================= */
+bindTouch(
+  getButton(
+    "reloadButton"
+  ),
   () => {
-
-    player.x -= 25;
-
-    player.direction =
-      Math.PI;
-
-  },
-  "move-button"
+    reload();
+  }
 );
-
-// =====================================================
-// RIGHT
-// =====================================================
-
-createButton(
-  "▶",
-  "35px",
-  "55px",
+/* =========================
+   GUN BUTTON
+========================= */
+bindTouch(
+  getButton(
+    "gunButton"
+  ),
   () => {
-
-    player.x += 25;
-
-    player.direction =
-      0;
-
-  },
-  "move-button"
+    switchWeapon();
+  }
 );
-
-// =====================================================
-// GAME LOOP
-// =====================================================
-
+/* =========================
+   RUN BUTTON
+========================= */
+bindTouch(
+  getButton(
+    "runButton"
+  ),
+  () => {
+    setRun(true);
+  },
+  () => {
+    setRun(false);
+  }
+);
+/* =========================
+   CROUCH BUTTON
+========================= */
+bindTouch(
+  getButton(
+    "crouchButton"
+  ),
+  () => {
+    toggleCrouch();
+  }
+);
+/* =========================
+   AIM AREA
+========================= */
+const aimArea =
+  document.getElementById(
+    "aimArea"
+  );
+if (aimArea) {
+  aimArea.addEventListener(
+    "touchmove",
+    event => {
+      if (
+        document.body.classList
+          .contains("editMode")
+      ) {
+        return;
+      }
+      const touch =
+        event.touches[0];
+      const rect =
+        aimArea.getBoundingClientRect();
+      const x =
+        touch.clientX -
+        player.x;
+      const y =
+        touch.clientY -
+        player.y;
+      if (
+        Math.abs(x) +
+        Math.abs(y) >
+        5
+      ) {
+        player.direction =
+          Math.atan2(
+            y,
+            x
+          );
+      }
+    },
+    {
+      passive: true
+    }
+  );
+}
+/* =========================
+   GAME LOOP
+========================= */
 function gameLoop() {
-
   updatePlayer();
-
   updateEffects();
-
   drawMap();
-
   drawEnemies();
-
   drawPlayer();
-
   drawShootEffect();
-
   drawHUD();
-
+  updateHUD();
   requestAnimationFrame(
     gameLoop
   );
 }
-
-// =====================================================
-// START
-// =====================================================
-
+/* =========================
+   START
+========================= */
 resizeCanvas();
-
-updateUI();
-
 gameLoop();
