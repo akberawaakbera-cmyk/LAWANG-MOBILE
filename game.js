@@ -20,7 +20,9 @@ const player = {
   height: 50,
   speed: 4,
   hp: 100,
-  direction: 0
+  direction: 0,
+  moving: false,
+  animation: 0
 };
 
 // =========================
@@ -32,10 +34,101 @@ let weapon = "Pistol";
 let firing = false;
 
 const enemies = [
-  { x: 180, y: 180, hp: 100 },
-  { x: 500, y: 250, hp: 100 },
-  { x: 700, y: 450, hp: 100 }
+  { x: 180, y: 180, hp: 100, hitEffect: 0 },
+  { x: 500, y: 250, hp: 100, hitEffect: 0 },
+  { x: 700, y: 450, hp: 100, hitEffect: 0 }
 ];
+
+// =========================
+// SOUND SYSTEM
+// =========================
+
+const sounds = {
+  fire: new Audio("assets/fire.mp3"),
+  hit: new Audio("assets/hit.mp3"),
+  switch: new Audio("assets/switch.mp3"),
+  music: new Audio("assets/music.mp3")
+};
+
+sounds.fire.volume = 0.5;
+sounds.hit.volume = 0.5;
+sounds.switch.volume = 0.4;
+sounds.music.volume = 0.2;
+
+sounds.music.loop = true;
+
+function playSound(name) {
+  const sound = sounds[name];
+
+  if (!sound) return;
+
+  try {
+    sound.currentTime = 0;
+
+    const promise = sound.play();
+
+    if (promise) {
+      promise.catch(() => {});
+    }
+  } catch (error) {
+    console.log("Audio error:", error);
+  }
+}
+
+// =========================
+// AUDIO START
+// =========================
+
+let audioStarted = false;
+
+function startAudio() {
+  if (audioStarted) return;
+
+  audioStarted = true;
+
+  playSound("music");
+}
+
+document.addEventListener("touchstart", startAudio, {
+  once: true
+});
+
+document.addEventListener("click", startAudio, {
+  once: true
+});
+
+// =========================
+// EFFECTS
+// =========================
+
+let muzzleFlash = 0;
+let weaponAnimation = 0;
+let screenFlash = 0;
+
+function createShootEffect() {
+  muzzleFlash = 8;
+  weaponAnimation = 8;
+}
+
+function updateEffects() {
+  if (muzzleFlash > 0) {
+    muzzleFlash--;
+  }
+
+  if (weaponAnimation > 0) {
+    weaponAnimation--;
+  }
+
+  if (screenFlash > 0) {
+    screenFlash--;
+  }
+
+  for (const enemy of enemies) {
+    if (enemy.hitEffect > 0) {
+      enemy.hitEffect--;
+    }
+  }
+}
 
 // =========================
 // KEYBOARD
@@ -47,6 +140,7 @@ window.addEventListener("keydown", event => {
   keys[event.key.toLowerCase()] = true;
 
   if (event.key === " ") {
+    event.preventDefault();
     fire();
   }
 
@@ -64,28 +158,45 @@ window.addEventListener("keyup", event => {
 // =========================
 
 function updatePlayer() {
+  player.moving = false;
+
   if (keys["w"] || keys["arrowup"]) {
     player.y -= player.speed;
     player.direction = -Math.PI / 2;
+    player.moving = true;
   }
 
   if (keys["s"] || keys["arrowdown"]) {
     player.y += player.speed;
     player.direction = Math.PI / 2;
+    player.moving = true;
   }
 
   if (keys["a"] || keys["arrowleft"]) {
     player.x -= player.speed;
     player.direction = Math.PI;
+    player.moving = true;
   }
 
   if (keys["d"] || keys["arrowright"]) {
     player.x += player.speed;
     player.direction = 0;
+    player.moving = true;
   }
 
-  player.x = Math.max(25, Math.min(canvas.width - 25, player.x));
-  player.y = Math.max(35, Math.min(canvas.height - 35, player.y));
+  if (player.moving) {
+    player.animation += 0.2;
+  }
+
+  player.x = Math.max(
+    25,
+    Math.min(canvas.width - 25, player.x)
+  );
+
+  player.y = Math.max(
+    35,
+    Math.min(canvas.height - 35, player.y)
+  );
 }
 
 // =========================
@@ -94,7 +205,12 @@ function updatePlayer() {
 
 function drawMap() {
   ctx.fillStyle = "#101820";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
 
   ctx.strokeStyle = "#1d3038";
   ctx.lineWidth = 1;
@@ -123,32 +239,104 @@ function drawPlayer() {
 
   ctx.translate(player.x, player.y);
 
+  // Walking animation
+  let bob = 0;
+
+  if (player.moving) {
+    bob = Math.sin(player.animation) * 3;
+  }
+
   // Body
   ctx.fillStyle = "#2388ff";
+
   ctx.fillRect(
     -player.width / 2,
-    -player.height / 2,
+    -player.height / 2 + bob,
     player.width,
     player.height
   );
 
   // Head
   ctx.fillStyle = "#f0b48a";
+
   ctx.beginPath();
-  ctx.arc(0, -32, 13, 0, Math.PI * 2);
+
+  ctx.arc(
+    0,
+    -32 + bob,
+    13,
+    0,
+    Math.PI * 2
+  );
+
   ctx.fill();
+
+  // Weapon animation
+  let weaponOffset = 0;
+
+  if (weaponAnimation > 0) {
+    weaponOffset = 5;
+  }
 
   // Weapon
   ctx.strokeStyle = "#dddddd";
   ctx.lineWidth = 7;
 
   ctx.beginPath();
-  ctx.moveTo(0, -5);
-  ctx.lineTo(
-    Math.cos(player.direction) * 35,
-    Math.sin(player.direction) * 35 - 5
+
+  ctx.moveTo(
+    0,
+    -5
   );
+
+  ctx.lineTo(
+    Math.cos(player.direction) * (35 + weaponOffset),
+    Math.sin(player.direction) * (35 + weaponOffset) - 5
+  );
+
   ctx.stroke();
+
+  ctx.restore();
+}
+
+// =========================
+// MUZZLE FLASH
+// =========================
+
+function drawShootEffect() {
+  if (muzzleFlash <= 0) return;
+
+  ctx.save();
+
+  ctx.translate(
+    player.x,
+    player.y
+  );
+
+  const length = 50;
+
+  ctx.fillStyle = "#ffd34d";
+
+  ctx.beginPath();
+
+  ctx.moveTo(
+    Math.cos(player.direction) * length,
+    Math.sin(player.direction) * length - 5
+  );
+
+  ctx.lineTo(
+    Math.cos(player.direction + 0.35) * 20,
+    Math.sin(player.direction + 0.35) * 20 - 5
+  );
+
+  ctx.lineTo(
+    Math.cos(player.direction - 0.35) * 20,
+    Math.sin(player.direction - 0.35) * 20 - 5
+  );
+
+  ctx.closePath();
+
+  ctx.fill();
 
   ctx.restore();
 }
@@ -161,18 +349,37 @@ function drawEnemies() {
   for (const enemy of enemies) {
     if (enemy.hp <= 0) continue;
 
-    ctx.fillStyle = "#e83b3b";
+    if (enemy.hitEffect > 0) {
+      ctx.fillStyle = "#ffffff";
+    } else {
+      ctx.fillStyle = "#e83b3b";
+    }
 
     ctx.beginPath();
-    ctx.arc(enemy.x, enemy.y, 24, 0, Math.PI * 2);
+
+    ctx.arc(
+      enemy.x,
+      enemy.y,
+      24,
+      0,
+      Math.PI * 2
+    );
+
     ctx.fill();
 
     // HP background
     ctx.fillStyle = "#222";
-    ctx.fillRect(enemy.x - 30, enemy.y - 38, 60, 7);
+
+    ctx.fillRect(
+      enemy.x - 30,
+      enemy.y - 38,
+      60,
+      7
+    );
 
     // HP
     ctx.fillStyle = "#36df62";
+
     ctx.fillRect(
       enemy.x - 30,
       enemy.y - 38,
@@ -187,7 +394,15 @@ function drawEnemies() {
 // =========================
 
 function fire() {
+  if (firing) return;
+
   firing = true;
+
+  startAudio();
+
+  playSound("fire");
+
+  createShootEffect();
 
   let closest = null;
   let closestDistance = Infinity;
@@ -195,12 +410,17 @@ function fire() {
   for (const enemy of enemies) {
     if (enemy.hp <= 0) continue;
 
-    const dx = enemy.x - player.x;
-    const dy = enemy.y - player.y;
+    const dx =
+      enemy.x - player.x;
 
-    const distance = Math.sqrt(
-      dx * dx + dy * dy
-    );
+    const dy =
+      enemy.y - player.y;
+
+    const distance =
+      Math.sqrt(
+        dx * dx +
+        dy * dy
+      );
 
     if (distance < closestDistance) {
       closestDistance = distance;
@@ -208,11 +428,21 @@ function fire() {
     }
   }
 
-  if (closest && closestDistance < 500) {
+  if (
+    closest &&
+    closestDistance < 500
+  ) {
     closest.hp -= 25;
+
+    closest.hitEffect = 8;
+
+    screenFlash = 5;
+
+    playSound("hit");
 
     if (closest.hp <= 0) {
       closest.hp = 0;
+
       score += 100;
     }
   }
@@ -227,6 +457,8 @@ function fire() {
 // =========================
 
 function switchWeapon() {
+  startAudio();
+
   if (weapon === "Pistol") {
     weapon = "Rifle";
   } else if (weapon === "Rifle") {
@@ -234,6 +466,10 @@ function switchWeapon() {
   } else {
     weapon = "Pistol";
   }
+
+  weaponAnimation = 12;
+
+  playSound("switch");
 }
 
 // =========================
@@ -263,39 +499,92 @@ function drawHUD() {
   );
 
   // Crosshair
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
+
+  const cx =
+    canvas.width / 2;
+
+  const cy =
+    canvas.height / 2;
 
   ctx.strokeStyle = "#ffffff";
   ctx.lineWidth = 2;
 
   ctx.beginPath();
 
-  ctx.moveTo(cx - 12, cy);
-  ctx.lineTo(cx - 4, cy);
+  ctx.moveTo(
+    cx - 12,
+    cy
+  );
 
-  ctx.moveTo(cx + 4, cy);
-  ctx.lineTo(cx + 12, cy);
+  ctx.lineTo(
+    cx - 4,
+    cy
+  );
 
-  ctx.moveTo(cx, cy - 12);
-  ctx.lineTo(cx, cy - 4);
+  ctx.moveTo(
+    cx + 4,
+    cy
+  );
 
-  ctx.moveTo(cx, cy + 4);
-  ctx.lineTo(cx, cy + 12);
+  ctx.lineTo(
+    cx + 12,
+    cy
+  );
+
+  ctx.moveTo(
+    cx,
+    cy - 12
+  );
+
+  ctx.lineTo(
+    cx,
+    cy - 4
+  );
+
+  ctx.moveTo(
+    cx,
+    cy + 4
+  );
+
+  ctx.lineTo(
+    cx,
+    cy + 12
+  );
 
   ctx.stroke();
+
+  // Screen flash
+
+  if (screenFlash > 0) {
+    ctx.fillStyle =
+      "rgba(255,255,255,0.08)";
+
+    ctx.fillRect(
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+  }
 }
 
 // =========================
 // MOBILE BUTTON
 // =========================
 
-function createButton(text, right, bottom, action) {
-  const button = document.createElement("button");
+function createButton(
+  text,
+  right,
+  bottom,
+  action
+) {
+  const button =
+    document.createElement("button");
 
   button.textContent = text;
 
   button.style.position = "fixed";
+
   button.style.right = right;
   button.style.bottom = bottom;
 
@@ -303,29 +592,47 @@ function createButton(text, right, bottom, action) {
   button.style.height = "70px";
 
   button.style.borderRadius = "50%";
-  button.style.border = "2px solid white";
+
+  button.style.border =
+    "2px solid white";
 
   button.style.background =
     "rgba(255,255,255,0.15)";
 
   button.style.color = "white";
+
   button.style.fontSize = "15px";
 
   button.style.zIndex = "9999";
+
+  button.style.touchAction = "none";
 
   button.addEventListener(
     "touchstart",
     event => {
       event.preventDefault();
+
+      startAudio();
+
       action();
     },
     { passive: false }
   );
 
-  button.addEventListener("click", action);
+  button.addEventListener(
+    "click",
+    () => {
+      startAudio();
+      action();
+    }
+  );
 
   document.body.appendChild(button);
 }
+
+// =========================
+// MOBILE CONTROLS
+// =========================
 
 // FIRE
 createButton(
@@ -350,6 +657,7 @@ createButton(
   "150px",
   () => {
     player.y -= 25;
+    player.direction = -Math.PI / 2;
   }
 );
 
@@ -360,6 +668,7 @@ createButton(
   "55px",
   () => {
     player.y += 25;
+    player.direction = Math.PI / 2;
   }
 );
 
@@ -370,6 +679,7 @@ createButton(
   "55px",
   () => {
     player.x -= 25;
+    player.direction = Math.PI;
   }
 );
 
@@ -380,6 +690,7 @@ createButton(
   "55px",
   () => {
     player.x += 25;
+    player.direction = 0;
   }
 );
 
@@ -390,9 +701,16 @@ createButton(
 function gameLoop() {
   updatePlayer();
 
+  updateEffects();
+
   drawMap();
+
   drawEnemies();
+
   drawPlayer();
+
+  drawShootEffect();
+
   drawHUD();
 
   requestAnimationFrame(gameLoop);
