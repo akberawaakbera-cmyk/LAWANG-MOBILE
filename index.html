@@ -5,12 +5,17 @@
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    content="width=device-width,
+    initial-scale=1.0,
+    maximum-scale=1.0,
+    user-scalable=no,
+    viewport-fit=cover"
   >
 
   <title>LAWANG MOBILE</title>
 
   <style>
+
     * {
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
@@ -20,31 +25,50 @@
     body {
       margin: 0;
       padding: 0;
+
       width: 100%;
       height: 100%;
+
       overflow: hidden;
+
       background: #10151c;
+
       font-family: Arial, sans-serif;
+
       touch-action: none;
     }
 
     #game {
-      display: block;
+
+      position: fixed;
+
+      left: 0;
+      top: 0;
+
       width: 100vw;
       height: 100vh;
+
+      display: block;
+
       background: #18212b;
     }
 
+    /* =========================
+       HUD
+    ========================= */
+
     #ui {
+
       position: fixed;
+
       top: 15px;
       left: 15px;
 
-      z-index: 10;
+      z-index: 100;
 
       color: white;
 
-      background: rgba(0, 0, 0, 0.55);
+      background: rgba(0,0,0,0.55);
 
       padding: 10px 14px;
 
@@ -56,6 +80,307 @@
 
       pointer-events: none;
     }
+
+    /* =========================
+       MOBILE CONTROLS
+    ========================= */
+
+    #mobileControls {
+
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 200;
+
+      pointer-events: none;
+    }
+
+    /* =========================
+       JOYSTICK
+    ========================= */
+
+    #joystick {
+
+      position: absolute;
+
+      left: 25px;
+
+      bottom: 30px;
+
+      width: 145px;
+      height: 145px;
+
+      border-radius: 50%;
+
+      background:
+        rgba(255,255,255,0.10);
+
+      border:
+        2px solid
+        rgba(255,255,255,0.35);
+
+      pointer-events: auto;
+
+      touch-action: none;
+    }
+
+    #joystickKnob {
+
+      position: absolute;
+
+      left: 50%;
+      top: 50%;
+
+      width: 65px;
+      height: 65px;
+
+      margin-left: -32.5px;
+      margin-top: -32.5px;
+
+      border-radius: 50%;
+
+      background:
+        rgba(255,255,255,0.30);
+
+      border:
+        2px solid
+        rgba(255,255,255,0.65);
+
+      pointer-events: none;
+
+      transition:
+        transform 0.03s linear;
+    }
+
+    /* =========================
+       AIM AREA
+    ========================= */
+
+    #aimArea {
+
+      position: absolute;
+
+      right: 0;
+      top: 0;
+
+      width: 55%;
+      height: 75%;
+
+      pointer-events: auto;
+
+      touch-action: none;
+    }
+
+    /* =========================
+       BUTTONS
+    ========================= */
+
+    .gameButton {
+
+      position: absolute;
+
+      display: flex;
+
+      align-items: center;
+      justify-content: center;
+
+      color: white;
+
+      border-radius: 50%;
+
+      border:
+        2px solid
+        rgba(255,255,255,0.55);
+
+      background:
+        rgba(255,255,255,0.14);
+
+      font-weight: bold;
+
+      user-select: none;
+
+      -webkit-user-select: none;
+
+      pointer-events: auto;
+
+      touch-action: none;
+    }
+
+    #fireButton {
+
+      right: 25px;
+      bottom: 45px;
+
+      width: 90px;
+      height: 90px;
+
+      background:
+        rgba(220,50,50,0.40);
+
+      font-size: 17px;
+    }
+
+    #jumpButton {
+
+      right: 135px;
+      bottom: 40px;
+
+      width: 65px;
+      height: 65px;
+
+      font-size: 14px;
+    }
+
+    #reloadButton {
+
+      right: 145px;
+      bottom: 120px;
+
+      width: 58px;
+      height: 58px;
+
+      font-size: 12px;
+    }
+
+    #gunButton {
+
+      right: 35px;
+      bottom: 155px;
+
+      width: 65px;
+      height: 65px;
+
+      font-size: 12px;
+    }
+
+    #runButton {
+
+      left: 180px;
+      bottom: 40px;
+
+      width: 60px;
+      height: 60px;
+
+      font-size: 12px;
+    }
+
+    #crouchButton {
+
+      right: 215px;
+      bottom: 45px;
+
+      width: 58px;
+      height: 58px;
+
+      font-size: 11px;
+    }
+
+    /* =========================
+       SETTINGS
+    ========================= */
+
+    #settingsButton {
+
+      position: fixed;
+
+      right: 15px;
+      top: 15px;
+
+      z-index: 300;
+
+      width: 48px;
+      height: 48px;
+
+      border-radius: 50%;
+
+      border:
+        1px solid
+        rgba(255,255,255,0.4);
+
+      background:
+        rgba(0,0,0,0.5);
+
+      color: white;
+
+      font-size: 22px;
+    }
+
+    /* =========================
+       SETTINGS PANEL
+    ========================= */
+
+    #settingsPanel {
+
+      display: none;
+
+      position: fixed;
+
+      inset: 0;
+
+      z-index: 500;
+
+      background:
+        rgba(0,0,0,0.75);
+
+      color: white;
+
+      align-items: center;
+      justify-content: center;
+    }
+
+    #settingsBox {
+
+      width: 85%;
+
+      max-width: 420px;
+
+      background: #18212b;
+
+      border:
+        1px solid
+        rgba(255,255,255,0.25);
+
+      border-radius: 18px;
+
+      padding: 22px;
+
+      text-align: center;
+    }
+
+    #settingsBox h2 {
+
+      margin-top: 0;
+    }
+
+    .settingRow {
+
+      display: flex;
+
+      justify-content: space-between;
+
+      align-items: center;
+
+      margin: 18px 0;
+    }
+
+    #closeSettings {
+
+      width: 100%;
+
+      padding: 12px;
+
+      border: 0;
+
+      border-radius: 10px;
+
+      background: #2388ff;
+
+      color: white;
+
+      font-size: 16px;
+    }
+
   </style>
 </head>
 
@@ -63,7 +388,12 @@
 
   <canvas id="game"></canvas>
 
+  <!-- =========================
+       HUD
+  ========================= -->
+
   <div id="ui">
+
     <strong>LAWANG MOBILE</strong><br>
 
     HP:
@@ -76,10 +406,307 @@
 
     Score:
     <span id="score">0</span>
+
   </div>
 
-  <!-- Game Engine -->
+  <!-- =========================
+       SETTINGS BUTTON
+  ========================= -->
+
+  <button id="settingsButton">
+    ⚙️
+  </button>
+
+  <!-- =========================
+       MOBILE CONTROLS
+  ========================= -->
+
+  <div id="mobileControls">
+
+    <!-- Movement -->
+
+    <div id="joystick">
+
+      <div id="joystickKnob"></div>
+
+    </div>
+
+    <!-- Aim -->
+
+    <div id="aimArea"></div>
+
+    <!-- Action buttons -->
+
+    <div
+      id="fireButton"
+      class="gameButton"
+    >
+      FIRE
+    </div>
+
+    <div
+      id="jumpButton"
+      class="gameButton"
+    >
+      JUMP
+    </div>
+
+    <div
+      id="reloadButton"
+      class="gameButton"
+    >
+      RELOAD
+    </div>
+
+    <div
+      id="gunButton"
+      class="gameButton"
+    >
+      GUN
+    </div>
+
+    <div
+      id="runButton"
+      class="gameButton"
+    >
+      RUN
+    </div>
+
+    <div
+      id="crouchButton"
+      class="gameButton"
+    >
+      CROUCH
+    </div>
+
+  </div>
+
+  <!-- =========================
+       SETTINGS PANEL
+  ========================= -->
+
+  <div id="settingsPanel">
+
+    <div id="settingsBox">
+
+      <h2>LAWANG MOBILE</h2>
+
+      <div class="settingRow">
+        <span>Controls</span>
+        <span>Mobile</span>
+      </div>
+
+      <div class="settingRow">
+        <span>Graphics</span>
+        <span>High</span>
+      </div>
+
+      <div class="settingRow">
+        <span>FPS</span>
+        <span>60</span>
+      </div>
+
+      <button id="closeSettings">
+        CLOSE
+      </button>
+
+    </div>
+
+  </div>
+
+  <!-- =========================
+       GAME ENGINE
+  ========================= -->
+
   <script src="game.js"></script>
+
+  <!-- =========================
+       JOYSTICK SYSTEM
+  ========================= -->
+
+  <script>
+
+    const joystick =
+      document.getElementById(
+        "joystick"
+      );
+
+    const knob =
+      document.getElementById(
+        "joystickKnob"
+      );
+
+    let joystickActive = false;
+
+    const joystickCenter = 72;
+
+    const joystickMax = 45;
+
+    function moveJoystick(
+      clientX,
+      clientY
+    ) {
+
+      const rect =
+        joystick.getBoundingClientRect();
+
+      let x =
+        clientX -
+        rect.left -
+        joystickCenter;
+
+      let y =
+        clientY -
+        rect.top -
+        joystickCenter;
+
+      const distance =
+        Math.sqrt(
+          x * x +
+          y * y
+        );
+
+      if (
+        distance >
+        joystickMax
+      ) {
+
+        x =
+          (x / distance) *
+          joystickMax;
+
+        y =
+          (y / distance) *
+          joystickMax;
+      }
+
+      knob.style.transform =
+        `translate(${x}px, ${y}px)`;
+
+      /*
+       * Movement values are exposed
+       * for game.js.
+       */
+
+      window.joystickX =
+        x / joystickMax;
+
+      window.joystickY =
+        y / joystickMax;
+    }
+
+    function resetJoystick() {
+
+      joystickActive = false;
+
+      knob.style.transform =
+        "translate(0px, 0px)";
+
+      window.joystickX = 0;
+
+      window.joystickY = 0;
+    }
+
+    joystick.addEventListener(
+      "touchstart",
+      event => {
+
+        event.preventDefault();
+
+        joystickActive = true;
+
+        const touch =
+          event.touches[0];
+
+        moveJoystick(
+          touch.clientX,
+          touch.clientY
+        );
+
+      },
+      {
+        passive: false
+      }
+    );
+
+    joystick.addEventListener(
+      "touchmove",
+      event => {
+
+        if (!joystickActive) {
+          return;
+        }
+
+        event.preventDefault();
+
+        const touch =
+          event.touches[0];
+
+        moveJoystick(
+          touch.clientX,
+          touch.clientY
+        );
+
+      },
+      {
+        passive: false
+      }
+    );
+
+    joystick.addEventListener(
+      "touchend",
+      event => {
+
+        event.preventDefault();
+
+        resetJoystick();
+
+      },
+      {
+        passive: false
+      }
+    );
+
+    // Default values
+
+    window.joystickX = 0;
+
+    window.joystickY = 0;
+
+    // =========================
+    // SETTINGS
+    // =========================
+
+    const settingsButton =
+      document.getElementById(
+        "settingsButton"
+      );
+
+    const settingsPanel =
+      document.getElementById(
+        "settingsPanel"
+      );
+
+    const closeSettings =
+      document.getElementById(
+        "closeSettings"
+      );
+
+    settingsButton.onclick = () => {
+
+      settingsPanel.style.display =
+        "flex";
+
+    };
+
+    closeSettings.onclick = () => {
+
+      settingsPanel.style.display =
+        "none";
+
+    };
+
+  </script>
 
 </body>
 </html>
